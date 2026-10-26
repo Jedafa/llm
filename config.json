@@ -1,0 +1,41 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "api_key": "CHANGE-ME-my-router-key-1",
+    "require_auth": true,
+    "request_timeout": 120,
+    "connect_timeout": 10,
+    "max_attempts": 0
+  },
+  "providers": [
+    {
+      "name": "mistral",
+      "base_url": "https://api.mistral.ai/v1",
+      "api_key": "ВСТАВЬ_СЮДА_КЛЮЧ_MISTRAL",
+      "models": ["mistral-small-latest", "ministral-8b-latest", "codestral-latest", "open-mistral-nemo"],
+      "enabled": true
+    },
+    {
+      "name": "ollama",
+      "base_url": "http://localhost:11434/v1",
+      "api_key": "ollama",
+      "models": ["qwen2.5:7b", "llama3.2:3b"],
+      "enabled": true
+    },
+    {
+      "name": "groq",
+      "base_url": "https://api.groq.com/openai/v1",
+      "api_key": "",
+      "models": ["llama-3.3-70b-versatile"],
+      "enabled": false
+    },
+    {
+      "name": "nvidia",
+      "base_url": "https://integrate.api.nvidia.com/v1",
+      "api_key": "",
+      "models": ["meta/llama-3.1-8b-instruct"],
+      "enabled": false
+    }
+  ]
+}
