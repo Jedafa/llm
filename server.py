@@ -18,6 +18,17 @@ LLM Router — OpenAI-совместимый прокси-роутер с fallba
     python server.py                                  # конфиг берётся из ./config.json
     CONFIG_PATH=/путь/config.json python server.py    # свой путь к конфигу
     PORT=9000 python server.py                        # PORT из окружения имеет приоритет
+
+Переменные окружения (перекрывают config.json — удобно для Render/ClawCloud,
+чтобы не держать ключи в репозитории):
+    ROUTER_API_KEY    — ключ доступа к самому роутеру (server.api_key)
+    REQUIRE_AUTH      — true/false
+    PROVIDERS_JSON    — полный JSON-массив провайдеров (заменяет секцию providers)
+    На каждого провайдера из конфига (имя -> верхний регистр):
+      <ИМЯ>_API_KEY   — ключ провайдера, напр. MISTRAL_API_KEY
+      <ИМЯ>_BASE_URL  — базовый URL, напр. MISTRAL_BASE_URL
+      <ИМЯ>_MODELS    — модели через запятую, напр. MISTRAL_MODELS=mistral-small-latest,ministral-8b-latest
+      <ИМЯ>_ENABLED   — true/false, напр. OLLAMA_ENABLED=false
 """
 
 import asyncio
@@ -67,7 +78,46 @@ def load_config(force: bool = False) -> dict:
             log.info("Конфиг загружен: %s", CONFIG_PATH)
         except (json.JSONDecodeError, OSError) as e:
             log.error("Ошибка чтения конфига (%s оставлен старый): %s", "он " if CONFIG else "нет ", e)
-    return CONFIG
+    return apply_env_overrides(CONFIG)
+
+
+def _env_bool(v: str) -> bool:
+    return v.strip().lower() in ("1", "true", "yes", "on")
+
+
+def apply_env_overrides(cfg: dict) -> dict:
+    """Перекрывает конфиг переменными окружения (для деплоя без секретов в репо)."""
+    server = cfg.setdefault("server", {})
+    if os.environ.get("ROUTER_API_KEY"):
+        server["api_key"] = os.environ["ROUTER_API_KEY"].strip()
+    if os.environ.get("REQUIRE_AUTH"):
+        server["require_auth"] = _env_bool(os.environ["REQUIRE_AUTH"])
+    if os.environ.get("REQUEST_TIMEOUT"):
+        try:
+            server["request_timeout"] = float(os.environ["REQUEST_TIMEOUT"])
+        except ValueError:
+            pass
+    if os.environ.get("PROVIDERS_JSON"):
+        try:
+            parsed = json.loads(os.environ["PROVIDERS_JSON"])
+            if isinstance(parsed, list):
+                cfg["providers"] = parsed
+                log.info("providers заменены из PROVIDERS_JSON (%d шт.)", len(parsed))
+        except json.JSONDecodeError as e:
+            log.error("PROVIDERS_JSON не распарсился: %s", e)
+    for p in cfg.get("providers", []):
+        name = str(p.get("name", "")).upper().replace("-", "_").replace(".", "_")
+        if not name:
+            continue
+        if os.environ.get(f"{name}_API_KEY"):
+            p["api_key"] = os.environ[f"{name}_API_KEY"].strip()
+        if os.environ.get(f"{name}_BASE_URL"):
+            p["base_url"] = os.environ[f"{name}_BASE_URL"].strip()
+        if os.environ.get(f"{name}_MODELS"):
+            p["models"] = [m.strip() for m in os.environ[f"{name}_MODELS"].split(",") if m.strip()]
+        if os.environ.get(f"{name}_ENABLED"):
+            p["enabled"] = _env_bool(os.environ[f"{name}_ENABLED"])
+    return cfg
 
 
 def get_providers(cfg: dict) -> list:

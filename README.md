@@ -44,6 +44,25 @@ python server.py        # поднимется на http://0.0.0.0:8000
 Порядок провайдеров и моделей в конфиге = порядок fallback-цепочки.
 Конфиг перечитывается автоматически при изменении файла — можно добавлять ключи без рестарта.
 
+## Переменные окружения (для Render / ClawCloud — ключи без правки файлов)
+
+Env-переменные перекрывают config.json. В репозиторий кладётся config.json
+с пустыми ключами, секреты задаются в панели (Render → Environment):
+
+| Переменная | Что задаёт |
+|------------|-----------|
+| `ROUTER_API_KEY` | ключ доступа к самому роутеру (server.api_key) |
+| `REQUIRE_AUTH` | `true` / `false` |
+| `REQUEST_TIMEOUT` | таймаут запроса, сек |
+| `PROVIDERS_JSON` | полный JSON-массив провайдеров (заменяет секцию providers) |
+| `MISTRAL_API_KEY` | ключ Mistral (паттерн: `<ИМЯ>_API_KEY`, имя = name в верхнем регистре) |
+| `MISTRAL_MODELS` | модели через запятую: `mistral-small-latest,ministral-8b-latest` |
+| `MISTRAL_BASE_URL` | свой base_url |
+| `OLLAMA_ENABLED` | `false` — выключить провайдера ollama (паттерн `<ИМЯ>_ENABLED`) |
+
+Пример набора для Render: `ROUTER_API_KEY`, `MISTRAL_API_KEY`, `OLLAMA_ENABLED=false`.
+Смена ключа = правка переменной в панели → сервис сам перезапускается, коммитить ничего не надо.
+
 ## Эндпоинты
 
 | Метод | Путь | Ключ | Ответ |
