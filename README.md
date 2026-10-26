@@ -54,14 +54,24 @@ Env-переменные перекрывают config.json. В репозито
 | `ROUTER_API_KEY` | ключ доступа к самому роутеру (server.api_key) |
 | `REQUIRE_AUTH` | `true` / `false` |
 | `REQUEST_TIMEOUT` | таймаут запроса, сек |
-| `PROVIDERS_JSON` | полный JSON-массив провайдеров (заменяет секцию providers) |
-| `MISTRAL_API_KEY` | ключ Mistral (паттерн: `<ИМЯ>_API_KEY`, имя = name в верхнем регистре) |
+| `MISTRAL_API_KEY` | ключ Mistral |
+| `GROQ_API_KEY` | ключ Groq (console.groq.com) |
+| `NVIDIA_API_KEY` | ключ NVIDIA NIM (build.nvidia.com) |
 | `MISTRAL_MODELS` | модели через запятую: `mistral-small-latest,ministral-8b-latest` |
-| `MISTRAL_BASE_URL` | свой base_url |
-| `OLLAMA_ENABLED` | `false` — выключить провайдера ollama (паттерн `<ИМЯ>_ENABLED`) |
+| `GROQ_MODELS` | модели через запятую: `llama-3.3-70b-versatile,llama-3.1-8b-instant` |
+| `NVIDIA_MODELS` | модели через запятую: `meta/llama-3.1-8b-instruct,...` |
+| `<ИМЯ>_BASE_URL` | свой base_url провайдера |
+| `<ИМЯ>_ENABLED` | `false` — выключить провайдера (напр. `OLLAMA_ENABLED=false`) |
+| `PROVIDERS_JSON` | полный JSON-массив провайдеров (заменяет секцию providers) |
 
-Пример набора для Render: `ROUTER_API_KEY`, `MISTRAL_API_KEY`, `OLLAMA_ENABLED=false`.
-Смена ключа = правка переменной в панели → сервис сам перезапускается, коммитить ничего не надо.
+Паттерн: `<ИМЯ>_API_KEY` / `<ИМЯ>_MODELS` / `<ИМЯ>_ENABLED`, где ИМЯ — поле `name`
+провайдера в верхнем регистре (mistral -> MISTRAL, groq -> GROQ, nvidia -> NVIDIA).
+
+Провайдер с пустым ключом автоматически пропускается — можно держать всех
+включёнными в config.json и просто выдавать ключи через env.
+Роутинг (fallback) работает всегда: порядок = порядок провайдеров в config.json,
+внутри провайдера — порядок моделей. При таймауте/429/5xx/401 запрос уходит
+на следующую модель цепочки.
 
 ## Эндпоинты
 

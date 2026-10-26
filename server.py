@@ -121,11 +121,17 @@ def apply_env_overrides(cfg: dict) -> dict:
 
 
 def get_providers(cfg: dict) -> list:
-    """Только включённые провайдеры с base_url."""
+    """Включённые провайдеры с base_url. Провайдер без api_key пропускается
+    (нечем авторизоваться) — чтобы можно было держать всех включёнными и просто
+    добавлять ключи через переменные окружения."""
     out = []
     for p in cfg.get("providers", []):
-        if p.get("enabled", True) and p.get("base_url"):
-            out.append(p)
+        if not p.get("enabled", True) or not p.get("base_url"):
+            continue
+        if not str(p.get("api_key", "") or "").strip():
+            log.info("провайдер '%s' пропущен: не задан api_key", p.get("name"))
+            continue
+        out.append(p)
     return out
 
 
