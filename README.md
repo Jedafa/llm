@@ -120,6 +120,35 @@ resp = client.chat.completions.create(
 print(resp.choices[0].message.content)
 ```
 
+## Ollama-совместимость (/api/*) — v1.4
+
+Роутер притворяется сервером Ollama: любые клиенты «под Ollama» работают с роутером напрямую.
+
+| Метод | Путь | Что делает |
+|-------|------|-----------|
+| POST | `/api/chat` | чат в формате Ollama (`{"model":..., "messages":[...]}`), стрим = NDJSON |
+| POST | `/api/generate` | generate в формате Ollama (`{"model":..., "prompt":"..."}`) |
+| GET | `/api/tags` | список моделей в формате Ollama |
+| GET | `/api/version` | версия (для проверок клиентов) |
+| GET | `/api/ps` | пустой список запущенных моделей |
+| POST | `/api/embeddings` | эмбеддинги в формате Ollama (legacy) |
+
+Запросы конвертируются в OpenAI-формат, ответы — обратно в формат Ollama,
+роутинг/fallback тот же. Параметры `options` (temperature, top_p, top_k,
+num_predict, stop) и `format: "json"` передаются в провайдера.
+
+Подключение клиентов (Open WebUI, LobeChat, Continue, ...):
+- Ollama URL: `https://llm-7a06.onrender.com` (без /v1!)
+- API key: ваш `ROUTER_API_KEY` (если клиент не умеет ключи — добавьте `?key=...`
+  к URL или временно поставьте `REQUIRE_AUTH=false`)
+
+Пример:
+```bash
+curl http://localhost:8000/api/chat -H "Authorization: Bearer KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "mistral-small-latest", "messages": [{"role": "user", "content": "привет"}], "stream": false}'
+```
+
 ## Как работает роутинг
 
 1. Клиент указал `model` — сначала пробуются все совпадения (формат `provider/model` или просто `model`),
